@@ -53,7 +53,7 @@
   (match (list col tl k v tr)
     #|! |#
     [(list (B) (T (R) (T (R) a x vx b) y vy c) z vz d)
-     (T (R) T((B) a x vx b) y vy (T (B) c z vz d))
+     (T (R) (T (B) a x vx b) y vy (T (B) c z vz d))
      ]
     #|!! swap_ad|#
     #|!
