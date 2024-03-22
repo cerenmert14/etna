@@ -4,7 +4,6 @@
 
 (require data/maybe)
 (require data/monad)
-(require algebraic/control/applicative)
 
 (struct B() #:transparent)
 
@@ -222,7 +221,7 @@
        )
      ]
     [(list a (T (R) b x vx c)) (do [t3  <- (join a b)] (return (T (R) t3 x vx c)))]
-    [(list (T (R) a x vx b) c) (apply (t (R) a x vx) (join b c))]
+    [(list (T (R) a x vx b) c) (do [t3  <- (join b c)] (return (T (R) a x vx t3)))]
     )
   )
 
@@ -276,9 +275,9 @@
   )
 
 (define/contract (delete x tr)
-  (any/c tree? . -> . tree?)
+  (any/c tree? . -> . (maybe/c tree?))
   #|! |#
-  (apply blacken (del x tr))
+  (do [tp <- (del x tr)] (return (blacken tp)))
 
   #|!! miscolor_delete |#
   #|!
