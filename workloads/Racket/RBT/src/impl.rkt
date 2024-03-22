@@ -41,7 +41,7 @@
   )
 
 (define/contract (redden t)
-  (tree? . -> . tree?)
+  (tree? . -> . (maybe/c tree?))
   (match t
     [(T _ l k v r) (just (T (R) l k v r))]
     [_ nothing]
@@ -169,8 +169,8 @@
   (tree? any/c any/c tree? . -> . (maybe/c tree?))
   (match (list tl k v tr)
     [(list a x vx (T (R) b y vy c)) (return (T (R) a x vx (T (B) b y vy c)))]
-    [(list (T (B) a x vx b) y vy bl) (return ((balance (B) (T (R) a x vx b) y vy bl)))]
-    [(list (T (R)  a x vx (T (B) b y vy c)) z vz bl)
+    [(list (T (B) a x vx b) y vy bl) (return (balance (B) (T (R) a x vx b) y vy bl))]
+    [(list (T (R) a x vx (T (B) b y vy c)) z vz bl)
      #|! |#
      (do [a2  <- (redden a)]
        (return (T (R) (balance (B) a2 x vx b) y vy (T (B) c z vz bl))))
@@ -223,8 +223,8 @@
      ]
     [(list a (T (R) b x vx c)) (do [t3  <- (join a b)] (return (T (R) t3 x vx c)))]
     [(list (T (R) a x vx b) c) (apply (t (R) a x vx) (join b c))]
-    )
   )
+)
 
 (define/contract (delLeft x a y vy b)
   (any/c tree? any/c any/c tree? . -> . (maybe/c tree?))

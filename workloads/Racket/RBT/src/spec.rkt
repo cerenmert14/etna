@@ -7,8 +7,6 @@
 (require data/maybe)
 (require data/functor)
 
-
-
 (define/contract (is-BST-Helper p t)
   (-> (-> integer? integer? boolean?) tree? boolean?)
   (match t 
@@ -108,6 +106,7 @@
 (define (prop_DeleteValid t k)
   (assumes (isRBT t) (isRBT (delete k t)))
 )
+(join (insert 1 0 (E)) (T (R) (E) 2 0 (E)))
 
 #| ----------- |#
 
