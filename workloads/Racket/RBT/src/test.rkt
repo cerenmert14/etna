@@ -30,3 +30,7 @@
   (delete 1 (insert 3 3 (insert 2 2 (insert 1 1 (E))))) 
   (T (B) (E) 2 2 (T (R) (E) 3 3 (E))))
 
+; Prop tests
+
+(check-equal? (prop_DeleteValid (E) 0) #t)
+

@@ -10,7 +10,7 @@
 
 
 (define/contract (is-BST-Helper p t)
-  (-> (-> integer? integer? boolean?) tree? boolean?)
+  (-> (-> integer? boolean?) tree? boolean?)
   (match t 
     [(E) #t]
     [(T c a x v b) (and (p x) (is-BST-Helper p a ) (is-BST-Helper p b))]
@@ -22,14 +22,12 @@
   (match t 
     [(E) #t]
     [(T _ a x _ b) (and (is-BST a) (is-BST b) 
-    ; todo => it doesn't check if all right tree is greater
-                        (is-BST-Helper (lambda (x y) (< x y)) b)
-                        (is-BST-Helper (lambda (x y) (> x y)) b)
+                        (is-BST-Helper (lambda (v) (< v x)) a)
+                        (is-BST-Helper (lambda (v) (> v x)) b)
                    )
     ]
   )
 )
-
 (define (blackRoot t)
   (match t 
     [(T (R) _ _ _ _) #f]
@@ -77,9 +75,8 @@
 )
 
 (define/contract (isRBT t)
-  (-> tree? maybe?)
-  (just (and (consistentBlackHeight t)))
-  ; (just (and (is-BST t) (consistentBlackHeight t) (noRedRed t)))
+  (-> tree? boolean?)
+  (and (is-BST t) (consistentBlackHeight t) (noRedRed t))
 )
 
 (define (to-list t)
@@ -93,7 +90,9 @@
   (match p1
     [(nothing) (nothing)]
     [(just #f) (nothing)]
+    [#f (nothing)]
     [(just #t) p2]
+    [#t p2]
   )
 )
 
