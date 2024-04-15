@@ -50,8 +50,8 @@
 (define gen:kvlist (gen:list gen:kv))
 
 (define bespoke
-    (gen:let ([kvs gen:kvlist])
-        (foldl insert-correct (E) kvs))       
+        (gen:let ([kvs gen:kvlist])
+        (foldl insert-correct (E) kvs))    
 )
 
 #| Validity Properties |#

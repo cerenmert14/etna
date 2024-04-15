@@ -7,11 +7,11 @@
 (require data/maybe)
 (require data/functor)
 
-(define/contract (is-BST-Helper p t)
-  (-> (-> integer? integer? boolean?) tree? boolean?)
+(define/contract (is-BST-helper p t)
+  (-> (-> integer? boolean?) tree? boolean?)
   (match t 
     [(E) #t]
-    [(T c a x v b) (and (p x) (is-BST-Helper p a ) (is-BST-Helper p b))]
+    [(T c a x v b) (and (p x) (is-BST-helper p a) (is-BST-helper p b))]
   )
 )
 
@@ -20,31 +20,30 @@
   (match t 
     [(E) #t]
     [(T _ a x _ b) (and (is-BST a) (is-BST b) 
-    ; todo => it doesn't check if all right tree is greater
-                        (is-BST-Helper (lambda (x y) (< x y)) b)
-                        (is-BST-Helper (lambda (x y) (> x y)) b)
+                        (is-BST-helper (lambda (v) (< v x)) a)
+                        (is-BST-helper (lambda (v) (> v x)) b)
                    )
     ]
   )
 )
 
-(define (blackRoot t)
+(define (black-root t)
   (match t 
     [(T (R) _ _ _ _) #f]
     [_ #t]
   )
 )
 
-(define/contract (noRedRed t)
+(define/contract (no-red-red t)
 (-> tree? boolean?)
   (match t 
     [(E) #t]
-    [(T (B) a _ _ b) (and (noRedRed a) (noRedRed b))]
-    [(T (R) a _ _ b) (and (blackRoot a) (blackRoot b) (noRedRed a) (noRedRed b))]
+    [(T (B) a _ _ b) (and (no-red-red a) (no-red-red b))]
+    [(T (R) a _ _ b) (and (black-root a) (black-root b) (no-red-red a) (no-red-red b))]
   )
 )
 
-(define/contract (isBlack rb)
+(define/contract (is-black rb)
   (color? . -> . number?)
   (match rb 
     [(B) 1]
@@ -52,38 +51,38 @@
   )
 )
 
-(define (consistentBlackHeight_ t)
+(define (consistent-black-height_ t)
   (-> tree? pair?)
   (match t 
     [(E) (cons #t 1)]
     [(T rb a k v b)
           (let*
-            ([aRes (consistentBlackHeight_ a)]
-            [bRes (consistentBlackHeight_ b)]
-            [aBool (car aRes)]
-            [aHeight (cdr aRes)]
-            [bBool (car bRes)] 
-            [bHeight (cdr bRes)])
-            (cons (and aBool bBool (= aHeight bHeight)) (+ aHeight (isBlack rb))))
+            ([aRes (consistent-black-height_ a)]
+             [bRes (consistent-black-height_ b)]
+             [aBool (car aRes)]
+             [aHeight (cdr aRes)]
+             [bBool (car bRes)] 
+             [bHeight (cdr bRes)])
+            (cons (and aBool bBool (= aHeight bHeight)) (+ aHeight (is-black rb))))
     ]
   )
 )
 
-(define/contract (consistentBlackHeight t)
+(define/contract (consistent-black-height t)
   (-> tree? boolean?)
-  (car (consistentBlackHeight_ t))
+  (car (consistent-black-height_ t))
 )
 
-(define/contract (isRBT t)
+(define/contract (is-RBT t)
   (-> tree? maybe?)
-  (just (and (consistentBlackHeight t)))
-  ; (just (and (is-BST t) (consistentBlackHeight t) (noRedRed t)))
+  (just (and (is-BST t) (consistent-black-height t) (no-red-red t)))
 )
 
 (define (to-list t)
   (match t 
     [(E) '()]
     [(T c l k v r) (append (to-list l) (list (list k v)) (to-list r))]
+    [_ '()]
   )
 )
 
@@ -100,13 +99,14 @@
 #| -- Validity Properties. |#
 
 (define (prop_InsertValid t k v)
-  (assumes (isRBT t) (isRBT (insert k v t)))
+  (assumes (is-RBT t) (is-RBT (insert k v t)))
 )
 
 (define (prop_DeleteValid t k)
-  (assumes (isRBT t) (isRBT (delete k t)))
+  (assumes (is-RBT t) (apply (lambda (x) (is-RBT x)) (delete k t)))
 )
-(join (insert 1 0 (E)) (T (R) (E) 2 0 (E)))
+
+;(apply (lambda (x) (is-RBT x)) (delete 0 (E)))
 
 #| ----------- |#
 
@@ -114,17 +114,16 @@
 
 
 (define (prop_InsertPost t k1 k2 v)
-  (assumes (isRBT t)
-           (just (equal? (map (find k2) (insert k1 v t)) (if (= k1 k2) (nothing) (find k2 t))))
+  (assumes (is-RBT t)
+           (just (equal? (find k2 (insert k1 v t)) (if (equal? k1 k2) (just v) (find k2 t))))
   )
 )
 
 (define (prop_DeletePost t k1 k2)
-  (assumes (isRBT t)
-           (just (equal? (map (find k2) (delete k1 t))  (if (= k1 k2) (nothing) (find k2 t))))
+  (assumes (is-RBT t)
+           (just (equal? (apply (lambda (x) (find k2 x)) (delete k1 t)) (if (= k1 k2) (nothing) (find k2 t))))
   )           
 )
-
 #| ----------- |#
 
 #| -- Model-based Properties. |#
@@ -146,53 +145,46 @@
 )
 
 (define (prop_InsertModel t k v)
-  (assumes (isRBT t)
-           (just (equal? (map to-list (insert k v t) (l_insert k v (delete-key k (to-list t))))))
+  (assumes (is-RBT t)
+           (just (equal? (to-list (insert k v t)) (l_insert k v (delete-key k (to-list t)))))
   )           
 )
 
 (define (prop_DeleteModel t k)
-  (assumes (isRBT t)
-           (just (equal? (map to-list (delete k t)) (delete-key k (to-list t))))
-  )           
+  (assumes (is-RBT t)
+           (just (equal? (apply (lambda (x) (to-list x)) (delete k t)) (delete-key k (to-list t))))           
+  )
 )
-
 #| ----------- |#
 
 #| -- Metamorphic Properties. |#
 
-(define (compare-op-list t1 t2)
-  (match (list t1 t2)
-    [(list (just t1) (just t2)) (equal? (to-list t1) (to-list t2))]
-    [* #f]
-  )
-)
-
 (define (prop_InsertInsert t k1 k2 v1 v2)
-  (assumes (isRBT t)
+  (assumes (is-RBT t)
            (just (equal? (to-list (insert k1 v1 (insert k2 v2 t))) 
                          (to-list (if (= k1 k2) (insert k1 v1 t) (insert k2 v2 (insert k1 v1 t))))))
   )           
 )
 
 (define (prop_InsertDelete t k1 k2 v)
-  (assumes (isRBT t)
-           (just (equal? (to-list (insert k1 v (delete k2 t))) 
-                         (to-list (if (= k1 k2) (insert k1 v t) (delete k2 (insert k1 v t))))))
+  (assumes (is-RBT t)
+           (just (equal? (apply (lambda (tr) (to-list (insert k1 v tr))) (delete k2 t))
+                         (to-list (if (= k1 k2) (insert k1 v t) (apply (lambda (x) x) (delete k2 (insert k1 v t)))))))
   )           
 )
 
 (define (prop_DeleteInsert t k1 k2 v)
-  (assumes (isRBT t)
-           (just (equal? (to-list (delete k1 (insert k2 v t))) 
-                         (to-list (if (= k1 k2) (delete k1 t) (insert k1 v (delete k1 t))))))
+  (assumes (is-RBT t)
+           (just (equal? (apply (lambda (x) (to-list x)) (delete k1 (insert k2 v t))) 
+                         (to-list (if (= k1 k2) (apply (lambda (x) x) (delete k1 t)) (apply (lambda (x) (insert k2 v x)) (delete k1 t))))))
   )           
 )
 
+
 (define (prop_DeleteDelete t k1 k2)
-  (assumes (isRBT t)
-           (just (equal? (to-list (delete k1 (delete k2 t))) 
-                         (to-list (delete k2 (delete k1 t)))))
+  (assumes (is-RBT t)
+           (just (equal? (to-list (apply (lambda (x) x) (apply (lambda (t2) (delete k1 t2)) (apply (lambda (t1) (return t1)) (delete k2 t))))) 
+                         (to-list (apply (lambda (x) x) (apply (lambda (t2) (delete k2 t2)) (apply (lambda (t1) (return t1)) (delete k1 t)))))))
   )           
 )
 
