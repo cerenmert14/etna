@@ -229,8 +229,11 @@
 (define/contract (del-left x a y vy b)
   (any/c tree? any/c any/c tree? . -> . (maybe/c tree?))
   (match (list a y vy b)
-    [(list (T (B) al ax avx ar) y vy b) (do [t <- (del x (T (B) al ax avx ar))] [t2 <- (bal-left t y vy b)] (return t2))]
-    [(list a y vy b) (do [t <- (del x a)] (return (T (R) t y vy b)))]
+    [(list (T (B) al ax avx ar) y vy b) (do [t1 <- (del x (T (B) al ax avx ar))] 
+                                            [t2 <- (bal-left t1 y vy b)] 
+                                            (return t2))]
+    [(list a y vy b) (do [t1 <- (del x a)] 
+                         (return (T (R) t1 y vy b)))]
   )
 )
   
@@ -238,8 +241,11 @@
 (define/contract (del-right x a y vy b)
   (any/c tree? any/c any/c tree? . -> . (maybe/c tree?))
   (match (list a y vy b)
-    [(list a y vy (T (B) bl bx bvx br)) (do [t <- (del x (T (B) bl bx bvx br))] [t2 <- (bal-right a y vy t)] (return t2))]
-    [(list a y vy b) (do [t <- (del x b)] (return (T (R) a y vy t)))]
+    [(list a y vy (T (B) bl bx bvx br)) (do [t1 <- (del x (T (B) bl bx bvx br))] 
+                                            [t2 <- (bal-right a y vy t1)] 
+                                            (return t2))]
+    [(list a y vy b) (do [t1 <- (del x b)] 
+                         (return (T (R) a y vy t1)))]
     )
   
 )

@@ -51,11 +51,11 @@
   )
 )
 
-(define (consistent-black-height_ t)
-  (-> tree? pair?)
+(define/contract (consistent-black-height_ t)
+  (tree? . ->  . pair?)
   (match t 
     [(E) (cons #t 1)]
-    [(T rb a k v b)
+    [(T rb a k _ b)
           (let*
             ([aRes (consistent-black-height_ a)]
              [bRes (consistent-black-height_ b)]
@@ -63,7 +63,7 @@
              [aHeight (cdr aRes)]
              [bBool (car bRes)] 
              [bHeight (cdr bRes)])
-            (cons (and aBool bBool (= aHeight bHeight)) (+ aHeight (is-black rb))))
+            (cons (and (and aBool bBool) (equal? aHeight bHeight)) (+ aHeight (is-black rb))))
     ]
   )
 )
@@ -106,8 +106,9 @@
   (assumes (is-RBT t) (apply (lambda (x) (is-RBT x)) (delete k t)))
 )
 
-;(apply (lambda (x) (is-RBT x)) (delete 0 (E)))
 
+;(apply (lambda (x) (consistent-black-height x)) (delete 12 (T (B) (T (B) (T (R) (E) 4 9 (E)) 7 17 (E)) 12 23 (T (B) (T (R) (E) 24 0 (E)) 25 20 (E)))))
+;(delete 12 (T (B) (T (B) (T (R) (E) 4 9 (E)) 7 17 (E)) 12 23 (T (B) (T (R) (E) 24 0 (E)) 25 20 (E))))
 #| ----------- |#
 
 #| -- Postcondition Properties. |#
